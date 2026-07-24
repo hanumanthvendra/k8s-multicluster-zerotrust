@@ -1,0 +1,33 @@
+# backend running in eks-sim. Identical Service name/namespace as in aks-sim.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: apps
+  labels: { app: backend }
+spec:
+  replicas: 2
+  selector: { matchLabels: { app: backend } }
+  template:
+    metadata:
+      labels: { app: backend }
+    spec:
+      containers:
+        - name: backend
+          image: hashicorp/http-echo:1.0
+          args: ["-listen=:8080", "-text=Hello from BACKEND  |  cluster=eks-sim"]
+          ports: [{ containerPort: 8080 }]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+  namespace: apps
+  annotations:
+    # THE key line: this Service is global across the mesh. Requests to
+    # backend.apps.svc.cluster.local load-balance across eks-sim AND aks-sim.
+    service.cilium.io/global: "true"
+spec:
+  selector: { app: backend }
+  ports:
+    - { name: http, port: 80, targetPort: 8080 }

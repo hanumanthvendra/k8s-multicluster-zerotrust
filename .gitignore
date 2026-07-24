@@ -1,0 +1,9 @@
+# macOS
+.DS_Store
+
+# Personal / LinkedIn marketing assets — keep these local, not in the public repo.
+# (Delete this line if you WANT the post + carousel + screenshots in the repo.)
+linkedin/
+
+# Local build artifacts
+*.log

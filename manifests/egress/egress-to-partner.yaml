@@ -1,0 +1,26 @@
+# Stable egress IP — the compromise that makes the security team say YES.
+#
+# Instead of whitelisting thousands of ephemeral pod/node IPs (which change on
+# every cluster update), ALL frontend traffic to the external partner leaves
+# through ONE dedicated gateway node. Security whitelists that single IP.
+#
+# On kind the egress IP is the gateway node's IP. In EKS you attach an Elastic
+# IP to that node/NAT; in AKS a static Public IP / NAT Gateway. The manifest is
+# otherwise identical.
+apiVersion: cilium.io/v2
+kind: CiliumEgressGatewayPolicy
+metadata:
+  name: egress-to-partner
+spec:
+  selectors:
+    - podSelector:
+        matchLabels:
+          io.kubernetes.pod.namespace: apps
+          app: frontend
+  # __PARTNER_CIDR__ is filled in by 05-test.sh with the partner's /32.
+  destinationCIDRs:
+    - "__PARTNER_CIDR__"
+  egressGateway:
+    nodeSelector:
+      matchLabels:
+        egress-node: "true"

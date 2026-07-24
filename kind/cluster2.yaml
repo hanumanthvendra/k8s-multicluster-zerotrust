@@ -1,0 +1,13 @@
+# aks-sim: stands in for your AKS cluster.
+# Distinct pod/service CIDRs from eks-sim so Cluster Mesh can route between them.
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: aks-sim
+networking:
+  disableDefaultCNI: true
+  kubeProxyMode: none
+  podSubnet: "10.2.0.0/16"
+  serviceSubnet: "10.12.0.0/16"
+nodes:
+  - role: control-plane
+  - role: worker

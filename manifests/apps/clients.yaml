@@ -1,0 +1,41 @@
+# Two clients in eks-sim:
+#   frontend   -> the legitimate caller (allowed by policy, by IDENTITY)
+#   bad-client -> same network, different identity (must be DENIED)
+# Both are plain shells we exec curl from. Pinned to worker (not the egress node)
+# so the egress-gateway demo is meaningful.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: apps
+  labels: { app: frontend }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: frontend } }
+  template:
+    metadata:
+      labels: { app: frontend }
+    spec:
+      nodeSelector: { kubernetes.io/hostname: eks-sim-worker }
+      containers:
+        - name: shell
+          image: nicolaka/netshoot:latest
+          command: ["sleep", "infinity"]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bad-client
+  namespace: apps
+  labels: { app: bad-client }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: bad-client } }
+  template:
+    metadata:
+      labels: { app: bad-client }
+    spec:
+      containers:
+        - name: shell
+          image: nicolaka/netshoot:latest
+          command: ["sleep", "infinity"]

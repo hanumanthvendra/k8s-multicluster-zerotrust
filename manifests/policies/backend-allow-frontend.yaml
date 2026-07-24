@@ -1,0 +1,31 @@
+# Identity-based authorization — the whole point of this scenario.
+#
+# There is NOT a single IP or CIDR in here. The rule is:
+#   "workloads with identity app=frontend may reach app=backend on :8080"
+# Cilium enforces this by CRYPTOGRAPHIC/eBPF IDENTITY (derived from labels),
+# so it holds no matter which node, IP, or CLUSTER the pods run on — and it
+# keeps holding after a cluster upgrade rotates every IP.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: backend-allow-frontend
+  namespace: apps
+spec:
+  endpointSelector:
+    matchLabels: { app: backend }
+  ingress:
+    - fromEndpoints:
+        # identity, not IP. The cluster qualifier matters: Cilium AUTO-SCOPES a
+        # bare fromEndpoints selector to the LOCAL cluster, so a local policy can
+        # never silently trust a look-alike identity from a remote cluster. To
+        # authorize a workload from another cluster you must name it explicitly —
+        # a security feature. frontend lives in eks-sim and calls backend in both
+        # clusters, so we allow the eks-sim frontend identity mesh-wide.
+        - matchLabels:
+            app: frontend
+            io.cilium.k8s.policy.cluster: eks-sim
+      toPorts:
+        - ports:
+            - { port: "8080", protocol: TCP }
+  # Default-deny is implied for backend the moment any ingress rule exists:
+  # bad-client (app=bad-client) has no matching rule -> DROPPED, in either cluster.

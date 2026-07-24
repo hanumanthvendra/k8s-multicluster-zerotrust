@@ -1,0 +1,16 @@
+# eks-sim: stands in for your EKS cluster.
+# - Default CNI disabled  -> Cilium is the CNI.
+# - kube-proxy disabled    -> Cilium eBPF replaces it (required for egress gateway).
+# - Non-overlapping pod/service CIDRs -> mandatory for Cluster Mesh.
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: eks-sim
+networking:
+  disableDefaultCNI: true
+  kubeProxyMode: none
+  podSubnet: "10.1.0.0/16"
+  serviceSubnet: "10.11.0.0/16"
+nodes:
+  - role: control-plane
+  - role: worker            # app workloads land here
+  - role: worker            # dedicated egress-gateway node (stable egress IP)

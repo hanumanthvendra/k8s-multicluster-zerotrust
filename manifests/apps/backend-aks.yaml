@@ -1,0 +1,32 @@
+# backend running in aks-sim. Same Service name/namespace/annotation as eks-sim,
+# so the mesh treats both as endpoints of ONE global service.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: apps
+  labels: { app: backend }
+spec:
+  replicas: 2
+  selector: { matchLabels: { app: backend } }
+  template:
+    metadata:
+      labels: { app: backend }
+    spec:
+      containers:
+        - name: backend
+          image: hashicorp/http-echo:1.0
+          args: ["-listen=:8080", "-text=Hello from BACKEND  |  cluster=aks-sim"]
+          ports: [{ containerPort: 8080 }]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+  namespace: apps
+  annotations:
+    service.cilium.io/global: "true"
+spec:
+  selector: { app: backend }
+  ports:
+    - { name: http, port: 80, targetPort: 8080 }
