@@ -1,8 +1,5 @@
 clusterName: eks-sim
 
-backend:
-  text: "Hello from BACKEND  |  cluster=eks-sim"
-
 frontend:
   enabled: true
 

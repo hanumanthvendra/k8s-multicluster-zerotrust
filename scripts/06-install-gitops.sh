@@ -59,12 +59,17 @@ helm upgrade --install argocd argo/argo-cd \
 ok "Argo CD installed"
 
 info "Jenkins on $C1_NAME (CI, GitHub source)"
-helm upgrade --install jenkins jenkins/jenkins \
-  --kube-context "$C1_CTX" \
-  --namespace jenkins --create-namespace \
-  -f "$ROOT/gitops/jenkins-values.yaml" \
-  --wait --timeout 15m
-ok "Jenkins installed"
+if kubectl --context "$C1_CTX" -n jenkins get pod jenkins-0 >/dev/null 2>&1 && \
+   [[ "$(kubectl --context "$C1_CTX" -n jenkins get pod jenkins-0 -o jsonpath='{.status.phase}')" == "Running" ]]; then
+  warn "Jenkins already running — skipping helm install"
+else
+  helm upgrade --install jenkins jenkins/jenkins \
+    --kube-context "$C1_CTX" \
+    --namespace jenkins --create-namespace \
+    -f "$ROOT/gitops/jenkins-values.yaml" \
+    --wait --timeout 15m
+  ok "Jenkins installed"
+fi
 
 AKS_SERVER="$(register_aks)"
 

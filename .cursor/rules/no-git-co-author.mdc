@@ -1,0 +1,15 @@
+---
+description: Never add Co-authored-by (or any Cursor attribution) to git commits
+alwaysApply: true
+---
+
+# No commit co-authors
+
+When creating git commits:
+
+- Do **not** add `Co-authored-by:` trailers (including `Cursor` / `cursoragent@cursor.com`).
+- Do **not** add `Made-with: Cursor` or similar attribution lines.
+- Pass only the intended subject/body via HEREDOC. If a tool or hook appends a co-author, strip it before finishing (amend **only** when the user asked to commit and the amend rules allow it).
+- Never force-push to rewrite co-authors unless the user explicitly asks.
+
+This applies to every commit in this repo and should be treated as a hard requirement.

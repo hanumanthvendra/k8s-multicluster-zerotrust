@@ -51,7 +51,10 @@ controller:
         jobs:
           - script: |
               pipelineJob('zerotrust-gitops') {
-                description('Scripted CI from GitHub (shared lib zerotrust). CD is Argo CD — no kubectl apply.')
+                description('CI on merge to main: checkout, secrets, SAST, helm/compile, image. CD is Argo CD.')
+                triggers {
+                  scm('H/5 * * * *')
+                }
                 definition {
                   cpsScm {
                     scm {
@@ -66,6 +69,15 @@ controller:
                   }
                 }
               }
+      k8s-cloud: |
+        jenkins:
+          clouds:
+            - kubernetes:
+                name: "kubernetes"
+                namespace: "jenkins"
+                jenkinsUrl: "http://jenkins.jenkins.svc.cluster.local:8080"
+                jenkinsTunnel: "jenkins-agent.jenkins.svc.cluster.local:50000"
+                skipTlsVerify: true
 
 persistence:
   enabled: false

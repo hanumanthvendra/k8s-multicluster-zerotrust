@@ -1,0 +1,6 @@
+title = "zerotrust"
+# Demo passwords in gitops/jenkins-values.yaml are local-kind only.
+[[allowlists]]
+paths = [
+  '''gitops/jenkins-values.yaml''',
+]

@@ -1,8 +1,12 @@
-// Scripted pipeline. Shared library lives in jenkins/shared-library
-// (registered as Global Pipeline Library `zerotrust` via JCasC).
+// Scripted CI. Shared library `zerotrust` (jenkins/shared-library).
+// After merge to main: this job runs. Argo CD deploys Helm — Jenkins does not.
 @Library('zerotrust') _
 
 zerotrustPipeline(
   chartPath: 'charts/zerotrust-apps',
-  clusters: ['eks-sim', 'aks-sim']
+  clusters: ['eks-sim', 'aks-sim'],
+  registry: '172.18.0.20:5000',
+  imageName: 'zerotrust-backend',
+  dockerfile: 'app/backend/Dockerfile',
+  dockerContext: 'app/backend'
 )

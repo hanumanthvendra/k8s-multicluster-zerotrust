@@ -18,10 +18,13 @@ spec:
     spec:
       containers:
         - name: backend
-          image: "{{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag }}"
-          args:
-            - "-listen=:{{ .Values.backend.listenPort }}"
-            - "-text={{ .Values.backend.text }}"
+          image: "{{ include "zerotrust.backendImage" . }}"
+          imagePullPolicy: {{ .Values.backend.image.pullPolicy }}
+          env:
+            - name: CLUSTER_NAME
+              value: {{ .Values.clusterName | quote }}
+            - name: PORT
+              value: {{ .Values.backend.listenPort | quote }}
           ports:
             - containerPort: {{ .Values.backend.listenPort }}
 {{- end }}

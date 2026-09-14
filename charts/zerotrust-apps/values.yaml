@@ -6,12 +6,13 @@ backend:
   enabled: true
   replicaCount: 2
   image:
-    repository: hashicorp/http-echo
-    tag: "1.0"
+    # Local kind registry (scripts/07-local-registry.sh). Prod: GHCR/ECR/ACR, not Docker Hub.
+    registry: "172.18.0.20:5000"
+    repository: zerotrust-backend
+    tag: "dev"
+    pullPolicy: Always
   listenPort: 8080
   servicePort: 80
-  # Overridden per cluster so you can see which cluster answered.
-  text: "Hello from BACKEND  |  cluster=eks-sim"
   globalService: true
 
 frontend:
