@@ -22,8 +22,19 @@ class HelmCharts implements Serializable {
         helm version --short
         exit 0
       fi
-      echo "helm not on PATH — installing Helm 3 to $HELM_INSTALL_DIR"
-      curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+      echo "helm not on PATH — installing Helm 3 to $HELM_INSTALL_DIR (no sudo)"
+      os="$(uname -s | tr '[:upper:]' '[:lower:]')"
+      machine="$(uname -m)"
+      case "$machine" in
+        aarch64|arm64) helm_arch=arm64 ;;
+        x86_64|amd64) helm_arch=amd64 ;;
+        *) echo "unsupported arch: $machine" >&2; exit 1 ;;
+      esac
+      helm_ver="${HELM_VERSION:-v3.16.4}"
+      tmp="$(mktemp -d)"
+      curl -fsSL "https://get.helm.sh/helm-${helm_ver}-${os}-${helm_arch}.tar.gz" -o "$tmp/helm.tgz"
+      tar -xzf "$tmp/helm.tgz" -C "$tmp"
+      install -m 0755 "$tmp/${os}-${helm_arch}/helm" "$HELM_INSTALL_DIR/helm"
       helm version --short
     '''
   }
