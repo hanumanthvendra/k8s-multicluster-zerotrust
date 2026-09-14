@@ -18,6 +18,9 @@ export CILIUM_VERSION="${CILIUM_VERSION:-1.19.6}"
 # which is what lets Cluster Mesh and the egress demo work locally).
 export KIND_NET="kind"
 
+# Git source of truth for Argo CD + Jenkins (override if you fork).
+export GITOPS_REPO_URL="${GITOPS_REPO_URL:-https://github.com/hanumanthvendra/k8s-multicluster-zerotrust.git}"
+
 # ---- Pretty logging ---------------------------------------------------------
 bold() { printf "\033[1m%s\033[0m\n" "$*"; }
 info() { printf "\033[1;34m▶ %s\033[0m\n" "$*"; }

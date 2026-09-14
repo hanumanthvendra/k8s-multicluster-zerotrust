@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 # Deploys backend into BOTH clusters (global service), clients into eks-sim,
 # and the identity-based authorization policy into both clusters.
+#
+# GitOps path: skip this script and run ./scripts/06-install-gitops.sh —
+# Argo CD renders charts/zerotrust-apps and syncs to both clusters.
 cd "$(dirname "$0")"; source ./lib.sh
 M=../manifests
 

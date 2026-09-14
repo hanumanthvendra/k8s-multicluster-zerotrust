@@ -1,4 +1,4 @@
-.PHONY: all prereqs clusters cilium mesh deploy test up down hubble
+.PHONY: all prereqs clusters cilium mesh deploy gitops gitops-lint test up down hubble
 SHELL := /bin/bash
 
 all: up test        ## full build + verification
@@ -11,10 +11,14 @@ cilium:             ## install Cilium (kube-proxy repl, wireguard, egress, hubbl
 	./scripts/02-install-cilium.sh
 mesh:               ## connect the clusters into one mesh
 	./scripts/03-enable-clustermesh.sh
-deploy:             ## deploy apps + identity policy
+deploy:             ## deploy apps + identity policy (kubectl; skip if using GitOps)
 	./scripts/04-deploy-apps.sh
+gitops:             ## Argo CD (Helm CD) + Jenkins (CI) on eks-sim
+	./scripts/06-install-gitops.sh
+gitops-lint:        ## helm lint + template (same checks Jenkins runs)
+	./scripts/ci-validate.sh
 
-up: prereqs clusters cilium mesh deploy   ## everything up
+up: prereqs clusters cilium mesh deploy   ## everything up (kubectl path)
 
 test:               ## run the 3 proofs (cross-cluster / identity / egress)
 	./scripts/05-test.sh

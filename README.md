@@ -72,12 +72,30 @@ script installs the `cilium` CLI for you.
 
 ```bash
 make up      # prereqs -> 2 clusters -> Cilium -> Cluster Mesh -> apps + policy
+make gitops  # Jenkins (CI) + Argo CD (Helm CD from GitHub) on eks-sim
 make test    # runs the 3 proofs below
 make hubble  # optional: live traffic-map UI for screenshots
 make down    # tear everything down
 ```
 
-Or step by step: `scripts/00…05` in order (`99-teardown.sh` to clean up).
+Or step by step: `scripts/00…05` in order, then `06-install-gitops.sh` (`99-teardown.sh` to clean up).
+
+### GitOps flow (Jenkins + Helm + Argo CD)
+
+```mermaid
+flowchart LR
+  DEV["push to GitHub"] --> GH["charts/zerotrust-apps"]
+  GH --> J["Jenkins CI<br/>helm lint + template"]
+  GH --> A["Argo CD ApplicationSet"]
+  J -. "does not deploy" .-> A
+  A --> EKS["eks-sim apps<br/>values-eks-sim.yaml"]
+  A --> AKS["aks-sim apps<br/>values-aks-sim.yaml"]
+```
+
+- **Git** is the source of truth (`https://github.com/hanumanthvendra/k8s-multicluster-zerotrust.git`).
+- **Jenkins** (`make gitops`) runs a scripted pipeline + shared library: checkout → Helm lint/template per cluster overlay → GitOps gate. It must not `kubectl apply` workloads.
+- **Argo CD** on `eks-sim` renders `charts/zerotrust-apps` with `values-eks-sim.yaml` / `values-aks-sim.yaml` and syncs to both clusters (prune + selfHeal).
+- **UIs** (NodePorts on the eks-sim control-plane): Jenkins `30081` (`admin` / `admin123`), Argo CD `30080` (`admin` / initial secret).
 
 ### What `make test` proves
 
