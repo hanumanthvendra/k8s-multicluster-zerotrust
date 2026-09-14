@@ -38,6 +38,14 @@ for ctx_name in "$C1_NAME" "$C2_NAME"; do
   done
 done
 
+# Seed Kaniko base image so CI does not pull from Docker Hub.
+if ! curl -sf "http://127.0.0.1:${REG_PORT_HOST}/v2/python/manifests/3.12-alpine" >/dev/null; then
+  info "Mirroring python:3.12-alpine into the local registry"
+  docker pull python:3.12-alpine
+  docker tag python:3.12-alpine "127.0.0.1:${REG_PORT_HOST}/python:3.12-alpine"
+  docker push "127.0.0.1:${REG_PORT_HOST}/python:3.12-alpine"
+fi
+
 ok "Registry ready: http://${REG_IP}:5000  (Mac: localhost:${REG_PORT_HOST})"
 echo "  Push example:  docker tag zerotrust-backend:dev ${REG_IP}:5000/zerotrust-backend:dev && docker push ${REG_IP}:5000/zerotrust-backend:dev"
 echo "  Helm image:    ${REG_IP}:5000/zerotrust-backend:<tag>"
