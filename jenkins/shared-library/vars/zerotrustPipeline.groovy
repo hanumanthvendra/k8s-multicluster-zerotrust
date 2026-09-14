@@ -2,7 +2,7 @@
  * Scripted CI. After the image is in the registry, a human Approve step
  * commits backend.image.tag to Git. Argo CD deploys from that commit.
  *
- * GitOps tag-bump commits put [skip ci] in the *subject* so poll-SCM does not rebuild.
+ * GitOps tag-bump commits use subject prefix chore(gitops): so poll-SCM does not rebuild.
  */
 def call(Map args = [:]) {
   def chartPath = args.chartPath ?: 'charts/zerotrust-apps'
@@ -52,10 +52,9 @@ spec:
         stage('Checkout') {
           checkout scm
           gitSha = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
-          // Subject only. The body of docs/commits may mention [skip ci] without meaning skip.
           def lastSubject = sh(script: 'git log -1 --pretty=%s', returnStdout: true).trim()
-          echo "git=${gitSha}"
-          if (lastSubject.contains('[skip ci]')) {
+          echo "git=${gitSha} subject=${lastSubject}"
+          if (lastSubject.startsWith('chore(gitops):')) {
             skipCi = true
             echo 'Skipping CI — this commit is a GitOps image-tag bump.'
           }
