@@ -1,0 +1,6 @@
+apiVersion: v2
+name: zerotrust-apps
+description: Zero-trust demo workloads (backend, clients) and identity policy for Cluster Mesh
+type: application
+version: 0.1.0
+appVersion: "1.0"

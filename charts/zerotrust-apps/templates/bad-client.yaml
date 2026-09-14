@@ -1,0 +1,23 @@
+{{- if .Values.badClient.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bad-client
+  labels:
+    app: bad-client
+    {{- include "zerotrust.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.badClient.replicaCount }}
+  selector:
+    matchLabels:
+      app: bad-client
+  template:
+    metadata:
+      labels:
+        app: bad-client
+    spec:
+      containers:
+        - name: shell
+          image: "{{ .Values.badClient.image.repository }}:{{ .Values.badClient.image.tag }}"
+          command: ["sleep", "infinity"]
+{{- end }}

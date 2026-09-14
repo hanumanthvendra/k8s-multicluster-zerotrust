@@ -41,4 +41,19 @@ info "Labelling egress-gateway node in $C1_NAME"
 kubectl --context "$C1_CTX" label node "${C1_NAME}-worker2" egress-node=true --overwrite
 ok "egress-node=true on ${C1_NAME}-worker2"
 
+# Docker Desktop nested DNS (192.168.65.254) is often unreachable from Cilium
+# pods, so CoreDNS SERVFAILs external names (Jenkins plugin downloads, etc.).
+patch_coredns_upstream() {
+  local ctx=$1
+  info "Pointing CoreDNS upstream at 8.8.8.8/1.1.1.1 ($ctx)"
+  kubectl --context "$ctx" -n kube-system get configmap coredns -o yaml \
+    | sed 's#forward \. /etc/resolv.conf#forward . 8.8.8.8 1.1.1.1#' \
+    | kubectl --context "$ctx" apply -f -
+  kubectl --context "$ctx" -n kube-system rollout restart deploy/coredns
+  kubectl --context "$ctx" -n kube-system rollout status deploy/coredns --timeout=90s
+}
+
+patch_coredns_upstream "$C1_CTX"
+patch_coredns_upstream "$C2_CTX"
+
 bold "Cilium installed on both clusters. Next:  ./scripts/03-enable-clustermesh.sh"

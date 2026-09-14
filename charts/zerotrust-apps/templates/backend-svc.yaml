@@ -1,0 +1,21 @@
+{{- if .Values.backend.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+  labels:
+    app: backend
+    {{- include "zerotrust.labels" . | nindent 4 }}
+  annotations:
+    {{- if .Values.backend.globalService }}
+    # Global across Cilium Cluster Mesh: one DNS name, endpoints in both clusters.
+    service.cilium.io/global: "true"
+    {{- end }}
+spec:
+  selector:
+    app: backend
+  ports:
+    - name: http
+      port: {{ .Values.backend.servicePort }}
+      targetPort: {{ .Values.backend.listenPort }}
+{{- end }}

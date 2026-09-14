@@ -1,0 +1,10 @@
+clusterName: aks-sim
+
+backend:
+  text: "Hello from BACKEND  |  cluster=aks-sim"
+
+frontend:
+  enabled: false
+
+badClient:
+  enabled: false

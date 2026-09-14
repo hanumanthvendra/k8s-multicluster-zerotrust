@@ -1,0 +1,74 @@
+# Jenkins controller on kind. Persistence off so the cluster can stay ephemeral.
+# Tolerates the control-plane taint (single-node kind clusters).
+controller:
+  serviceType: NodePort
+  nodePort: 30081
+  admin:
+    username: admin
+    password: "admin123"
+  javaOpts: "-Xmx512m -Djenkins.install.runSetupWizard=false"
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      memory: 1536Mi
+  numExecutors: 1
+  tolerations:
+    - key: node-role.kubernetes.io/control-plane
+      operator: Exists
+      effect: NoSchedule
+  additionalPlugins:
+    - job-dsl
+    - pipeline-stage-view
+    - credentials
+    - pipeline-groovy-lib
+    - timestamper
+  probes:
+    startupProbe:
+      failureThreshold: 60
+      periodSeconds: 10
+      timeoutSeconds: 5
+  JCasC:
+    defaultConfig: true
+    configScripts:
+      gitops: |
+        unclassified:
+          globalLibraries:
+            libraries:
+              - name: "zerotrust"
+                defaultVersion: "main"
+                implicit: false
+                allowVersionOverride: true
+                includeInChangesets: false
+                retriever:
+                  modernSCM:
+                    libraryPath: "jenkins/shared-library"
+                    scm:
+                      git:
+                        id: "zerotrust-shared-lib"
+                        remote: "https://github.com/hanumanthvendra/k8s-multicluster-zerotrust.git"
+        jobs:
+          - script: |
+              pipelineJob('zerotrust-gitops') {
+                description('Scripted CI from GitHub (shared lib zerotrust). CD is Argo CD — no kubectl apply.')
+                definition {
+                  cpsScm {
+                    scm {
+                      git {
+                        remote {
+                          url('https://github.com/hanumanthvendra/k8s-multicluster-zerotrust.git')
+                        }
+                        branches('*/main')
+                      }
+                    }
+                    scriptPath('jenkins/Jenkinsfile')
+                  }
+                }
+              }
+
+persistence:
+  enabled: false
+
+agent:
+  enabled: false

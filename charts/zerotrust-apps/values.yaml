@@ -1,0 +1,38 @@
+# Default chart values. Cluster overlays: values-eks-sim.yaml / values-aks-sim.yaml
+
+clusterName: eks-sim
+
+backend:
+  enabled: true
+  replicaCount: 2
+  image:
+    repository: hashicorp/http-echo
+    tag: "1.0"
+  listenPort: 8080
+  servicePort: 80
+  # Overridden per cluster so you can see which cluster answered.
+  text: "Hello from BACKEND  |  cluster=eks-sim"
+  globalService: true
+
+frontend:
+  enabled: false
+  replicaCount: 1
+  image:
+    repository: nicolaka/netshoot
+    tag: latest
+  # Pin off the egress-gateway node so the stable-egress demo is meaningful.
+  nodeSelector:
+    kubernetes.io/hostname: eks-sim-worker
+
+badClient:
+  enabled: false
+  replicaCount: 1
+  image:
+    repository: nicolaka/netshoot
+    tag: latest
+
+# Identity-based authorization (no IPs). frontend lives in eks-sim and is
+# allowed to reach backend in every mesh cluster.
+policy:
+  enabled: true
+  frontendCluster: eks-sim

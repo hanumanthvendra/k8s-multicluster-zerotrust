@@ -1,0 +1,27 @@
+{{- if .Values.backend.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  labels:
+    app: backend
+    {{- include "zerotrust.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.backend.replicaCount }}
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+        - name: backend
+          image: "{{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag }}"
+          args:
+            - "-listen=:{{ .Values.backend.listenPort }}"
+            - "-text={{ .Values.backend.text }}"
+          ports:
+            - containerPort: {{ .Values.backend.listenPort }}
+{{- end }}

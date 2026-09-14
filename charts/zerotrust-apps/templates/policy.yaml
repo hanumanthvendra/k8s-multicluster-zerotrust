@@ -1,0 +1,24 @@
+{{- if .Values.policy.enabled }}
+# Identity-based authorization — no IP or CIDR.
+# Cilium auto-scopes a bare fromEndpoints selector to the LOCAL cluster, so the
+# source cluster must be named explicitly (frontend runs in eks-sim).
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: backend-allow-frontend
+  labels:
+    {{- include "zerotrust.labels" . | nindent 4 }}
+spec:
+  endpointSelector:
+    matchLabels:
+      app: backend
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            app: frontend
+            io.cilium.k8s.policy.cluster: {{ .Values.policy.frontendCluster | quote }}
+      toPorts:
+        - ports:
+            - port: {{ .Values.backend.listenPort | quote }}
+              protocol: TCP
+{{- end }}

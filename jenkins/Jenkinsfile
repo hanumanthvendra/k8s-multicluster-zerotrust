@@ -1,0 +1,8 @@
+// Scripted pipeline. Shared library lives in jenkins/shared-library
+// (registered as Global Pipeline Library `zerotrust` via JCasC).
+@Library('zerotrust') _
+
+zerotrustPipeline(
+  chartPath: 'charts/zerotrust-apps',
+  clusters: ['eks-sim', 'aks-sim']
+)

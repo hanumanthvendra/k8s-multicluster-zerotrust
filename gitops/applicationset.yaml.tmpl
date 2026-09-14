@@ -1,0 +1,37 @@
+# Placeholders __GITOPS_REPO_URL__ and __AKS_SERVER__ are filled by 06-install-gitops.sh
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: zerotrust-apps
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - cluster: eks-sim
+            url: https://kubernetes.default.svc
+          - cluster: aks-sim
+            url: __AKS_SERVER__
+  template:
+    metadata:
+      name: "zerotrust-{{cluster}}"
+      labels:
+        app.kubernetes.io/part-of: zerotrust-gitops
+    spec:
+      project: zerotrust
+      source:
+        repoURL: __GITOPS_REPO_URL__
+        targetRevision: HEAD
+        path: charts/zerotrust-apps
+        helm:
+          valueFiles:
+            - "values-{{cluster}}.yaml"
+      destination:
+        server: "{{url}}"
+        namespace: apps
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true

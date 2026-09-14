@@ -1,0 +1,22 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: zerotrust
+  namespace: argocd
+spec:
+  description: Multi-cluster zero-trust apps (GitOps)
+  sourceRepos:
+    - "*"
+  destinations:
+    - namespace: apps
+      server: "*"
+    - namespace: argocd
+      server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+    - group: ""
+      kind: Namespace
+    - group: cilium.io
+      kind: CiliumNetworkPolicy
+  namespaceResourceWhitelist:
+    - group: "*"
+      kind: "*"
