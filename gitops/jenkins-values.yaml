@@ -51,7 +51,7 @@ controller:
         jobs:
           - script: |
               pipelineJob('zerotrust-gitops') {
-                description('CI on merge to main: checkout, secrets, SAST, helm/compile, image. CD is Argo CD.')
+                description('CI: scan/build/image. Approve commits the Helm tag; Argo CD deploys.')
                 triggers {
                   scm('H/5 * * * *')
                 }
