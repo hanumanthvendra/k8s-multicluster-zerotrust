@@ -9,7 +9,7 @@ backend:
     # Local kind registry (scripts/07-local-registry.sh). Prod: GHCR/ECR/ACR, not Docker Hub.
     registry: "172.18.0.20:5000"
     repository: zerotrust-backend
-    tag: "ba4d83c"
+    tag: "9510bc5"
     pullPolicy: Always
   listenPort: 8080
   servicePort: 80
