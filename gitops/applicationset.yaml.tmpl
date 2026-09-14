@@ -24,6 +24,7 @@ spec:
         targetRevision: HEAD
         path: charts/zerotrust-apps
         helm:
+          releaseName: "zerotrust-{{cluster}}"
           valueFiles:
             - "values-{{cluster}}.yaml"
       destination:

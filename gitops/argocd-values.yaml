@@ -7,10 +7,15 @@ notifications:
 configs:
   params:
     server.insecure: true
+  cm:
+    timeout.reconciliation: 30s
 
 server:
   extraArgs:
     - --insecure
+  service:
+    type: NodePort
+    nodePortHttp: 30080
   resources:
     requests:
       cpu: 50m
