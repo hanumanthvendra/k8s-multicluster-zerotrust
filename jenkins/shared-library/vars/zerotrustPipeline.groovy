@@ -70,13 +70,13 @@ spec:
         }
 
         if (!skipCi) {
-          stage('Secrets') {
+          stage('Secret scanning') {
             container('gitleaks') {
               new org.zerotrust.SecurityScans(this).gitleaks()
             }
           }
 
-          stage('SAST') {
+          stage('SAST analysis') {
             parallel(
               SonarQube: {
                 container('sonar') {
@@ -91,7 +91,7 @@ spec:
             )
           }
 
-          stage('Build') {
+          stage('Validate Helm and compile') {
             parallel(
               Helm: {
                 container('helm') {
@@ -106,8 +106,8 @@ spec:
             )
           }
 
-          stage('Image') {
-            def imageRef = "${registry}/${imageName}:${gitSha}"
+          def imageRef = "${registry}/${imageName}:${gitSha}"
+          stage('Create image') {
             container('kaniko') {
               imageDigest = new org.zerotrust.ImageBuild(this).kanikoPush(
                 registry: registry,
@@ -117,11 +117,12 @@ spec:
                 context: dockerContext
               )
             }
-            stage('Trivy') {
-              container('trivy') {
-                new org.zerotrust.SecurityScans(this).trivyFs()
-                new org.zerotrust.SecurityScans(this).trivyImage(imageRef)
-              }
+          }
+
+          stage('Image scanning') {
+            container('trivy') {
+              new org.zerotrust.SecurityScans(this).trivyFs()
+              new org.zerotrust.SecurityScans(this).trivyImage(imageRef)
             }
           }
         }
@@ -141,7 +142,7 @@ spec:
 
   node {
     timestamps {
-      stage('Update image tag in Git') {
+      stage('Update image pin in Git') {
         checkout scm
         new org.zerotrust.GitOps(this).bumpBackendTagAndPush(gitSha, imageDigest, repoUrl, gitCreds)
         gitOpsGate(clusters: clusters)
