@@ -9,8 +9,8 @@ backend:
   image:
     registry: "172.18.0.20:5000"
     repository: zerotrust-backend
-    tag: "9510bc5"
-    digest: ""
+    tag: "343fef9"
+    digest: "sha256:580518e4a6942178b85bf0afc72f89772c562424e6f2840c4f7fd4e925b85288"
     pullPolicy: Always
   listenPort: 8080
   servicePort: 80
