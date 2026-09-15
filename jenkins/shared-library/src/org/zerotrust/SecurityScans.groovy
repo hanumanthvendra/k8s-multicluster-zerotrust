@@ -17,18 +17,22 @@ class SecurityScans implements Serializable {
     steps.sh 'semgrep scan --config .semgrep.yml --error --metrics=off .'
   }
 
-  /** Upload to SonarQube when the server is up. Does not replace Semgrep. */
-  void sonarQube(String host) {
+  /**
+   * sonar-scanner-cli with a Jenkins secret-text credential (sonar-token).
+   * skipJreProvisioning: the image already has Java; auto-JRE download is flaky in kind.
+   */
+  void sonarQube(String host, String credentialsId) {
     steps.echo "SonarQube scanner -> ${host}"
-    steps.sh """
-      set +e
-      sonar-scanner -Dsonar.host.url='${host}' -Dsonar.qualitygate.wait=false
-      rc=\$?
-      set -e
-      if [ "\$rc" -ne 0 ]; then
-        echo "SonarQube scanner exited \$rc — Semgrep already ran as SAST; not failing the build"
-      fi
-    """
+    steps.withCredentials([steps.string(credentialsId: credentialsId, variable: 'SONAR_TOKEN')]) {
+      steps.sh """
+        set -euo pipefail
+        sonar-scanner \\
+          -Dsonar.host.url='${host}' \\
+          -Dsonar.token="\$SONAR_TOKEN" \\
+          -Dsonar.scanner.skipJreProvisioning=true \\
+          -Dsonar.qualitygate.wait=false
+      """
+    }
   }
 
   void trivyFs() {

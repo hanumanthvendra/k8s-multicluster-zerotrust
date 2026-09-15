@@ -94,7 +94,7 @@ flowchart LR
 
 - **Git** is the source of truth (`backend.image.tag` + `digest`).
 - **Jenkins** builds and scans. After **Approve** it commits the image pin. It must not `kubectl apply`, `helm upgrade`, or patch Services.
-- **SAST:** Semgrep always runs. SonarQube scanner uploads to `sonarqube` on `eks-sim` (NodePort `30090`) when the server is UP; otherwise that branch is skipped.
+- **SAST:** Semgrep always runs. **SonarQube** `sonar-scanner` runs in the same Security stage with Jenkins credential `sonar-token` (`scripts/09-jenkins-sonar-cred.sh`). UI: http://127.0.0.1:9000 (`admin` / `admin`).
 - **Trivy:** filesystem scan of `app/` in Security, then **image** scan after Kaniko (CRITICAL fails the build).
 - **Argo CD** renders `charts/zerotrust-apps` onto both clusters.
 - **Argo Rollouts** creates Green beside Blue, smokes the Preview Service, then switches `zerotrust-backend-active`. See [gitops/BLUE-GREEN.md](gitops/BLUE-GREEN.md).
