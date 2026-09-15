@@ -1,0 +1,14 @@
+# Argo Rollouts on each kind cluster (one controller per cluster).
+dashboard:
+  enabled: false
+notifications:
+  enabled: false
+keepCRDs: true
+controller:
+  replicas: 1
+  resources:
+    requests:
+      cpu: 25m
+      memory: 64Mi
+    limits:
+      memory: 256Mi

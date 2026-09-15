@@ -80,22 +80,27 @@ make down    # tear everything down
 
 Or step by step: `scripts/00…05` in order, then `06-install-gitops.sh` (`99-teardown.sh` to clean up).
 
-### GitOps flow (Jenkins + Helm + Argo CD)
+### GitOps flow (Jenkins + Helm + Argo CD + Argo Rollouts)
 
 ```mermaid
 flowchart LR
-  DEV["push to GitHub"] --> GH["charts/zerotrust-apps"]
-  GH --> J["Jenkins CI<br/>helm lint + template"]
+  DEV["push to GitHub"] --> J["Jenkins CI<br/>tests, SAST, Kaniko, Trivy"]
+  J -->|"Approve: write tag+digest"| GH["charts/zerotrust-apps/values.yaml"]
   GH --> A["Argo CD ApplicationSet"]
-  J -. "does not deploy" .-> A
-  A --> EKS["eks-sim apps<br/>values-eks-sim.yaml"]
-  A --> AKS["aks-sim apps<br/>values-aks-sim.yaml"]
+  A --> R["Argo Rollouts blue/green"]
+  R --> EKS["eks-sim active Service"]
+  R --> AKS["aks-sim active Service"]
 ```
 
-- **Git** is the source of truth (`https://github.com/hanumanthvendra/k8s-multicluster-zerotrust.git`).
-- **Jenkins** (`make gitops`) runs a scripted pipeline + shared library: checkout → Helm lint/template per cluster overlay → GitOps gate. It must not `kubectl apply` workloads.
-- **Argo CD** on `eks-sim` renders `charts/zerotrust-apps` with `values-eks-sim.yaml` / `values-aks-sim.yaml` and syncs to both clusters (prune + selfHeal).
-- **UIs** (NodePorts on the eks-sim control-plane): Jenkins `30081` (`admin` / `admin123`), Argo CD `30080` (`admin` / initial secret).
+- **Git** is the source of truth (`backend.image.tag` + `digest`).
+- **Jenkins** builds and scans. After **Approve** it commits the image pin. It must not `kubectl apply`, `helm upgrade`, or patch Services.
+- **SAST:** Semgrep always runs. SonarQube scanner uploads to `sonarqube` on `eks-sim` (NodePort `30090`) when the server is UP; otherwise that branch is skipped.
+- **Trivy:** filesystem scan of `app/` in Security, then **image** scan after Kaniko (CRITICAL fails the build).
+- **Argo CD** renders `charts/zerotrust-apps` onto both clusters.
+- **Argo Rollouts** creates Green beside Blue, smokes the Preview Service, then switches `zerotrust-backend-active`. See [gitops/BLUE-GREEN.md](gitops/BLUE-GREEN.md).
+- **UIs:** Jenkins NodePort `30081` (`admin` / `admin123`), Argo CD `30080`.
+
+Frontend always calls **`zerotrust-backend-active`**, never a ReplicaSet or preview Service.
 
 ### What `make test` proves
 

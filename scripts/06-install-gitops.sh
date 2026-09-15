@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # GitOps bootstrap on eks-sim (the hub):
-#   Jenkins  = CI  (helm lint/template; never kubectl-applies apps)
-#   Argo CD  = CD  (Helm chart from Git -> eks-sim + aks-sim)
+#   Jenkins        = CI (scan/build/push; never kubectl-applies apps)
+#   Argo CD        = CD (Helm chart from Git -> eks-sim + aks-sim)
+#   Argo Rollouts  = blue/green (one controller per cluster)
 cd "$(dirname "$0")"; source ./lib.sh
 ROOT="$(cd .. && pwd)"
 
@@ -48,7 +49,18 @@ EOF
 info "Helm repos"
 helm repo add argo https://argoproj.github.io/argo-helm >/dev/null
 helm repo add jenkins https://charts.jenkins.io >/dev/null
-helm repo update argo jenkins >/dev/null
+helm repo add sonarqube https://SonarSource.github.io/helm-chart-sonarqube >/dev/null
+helm repo update argo jenkins sonarqube >/dev/null
+
+info "Argo Rollouts on $C1_NAME and $C2_NAME (blue/green; not Jenkins)"
+for ctx in "$C1_CTX" "$C2_CTX"; do
+  helm upgrade --install argo-rollouts argo/argo-rollouts \
+    --kube-context "$ctx" \
+    --namespace argo-rollouts --create-namespace \
+    -f "$ROOT/gitops/argo-rollouts-values.yaml" \
+    --wait --timeout 5m
+  ok "Argo Rollouts installed on $ctx"
+done
 
 info "Argo CD on $C1_NAME"
 helm upgrade --install argocd argo/argo-cd \
@@ -57,6 +69,19 @@ helm upgrade --install argocd argo/argo-cd \
   -f "$ROOT/gitops/argocd-values.yaml" \
   --wait --timeout 10m
 ok "Argo CD installed"
+
+if [[ "${INSTALL_SONARQUBE:-1}" == "1" ]]; then
+  info "SonarQube on $C1_NAME (SAST; Jenkins sonar-scanner). Set INSTALL_SONARQUBE=0 to skip."
+  if helm upgrade --install sonarqube sonarqube/sonarqube \
+    --kube-context "$C1_CTX" \
+    --namespace sonarqube --create-namespace \
+    -f "$ROOT/gitops/sonarqube-values.yaml" \
+    --wait --timeout 8m; then
+    ok "SonarQube installed (NodePort 30090, auth disabled for the lab)"
+  else
+    warn "SonarQube install failed — Jenkins will skip the SonarQube stage; Semgrep still runs"
+  fi
+fi
 
 info "Jenkins on $C1_NAME (CI, GitHub source)"
 if kubectl --context "$C1_CTX" -n jenkins get pod jenkins-0 >/dev/null 2>&1 && \
@@ -90,14 +115,16 @@ done
 kubectl --context "$C1_CTX" -n argocd get application zerotrust-eks-sim zerotrust-aks-sim >/dev/null \
   || die "ApplicationSet did not create zerotrust-eks-sim / zerotrust-aks-sim"
 
-info "Waiting for Helm sync (Synced + Healthy)"
-for app in zerotrust-eks-sim zerotrust-aks-sim; do
-  kubectl --context "$C1_CTX" -n argocd wait "application/${app}" \
-    --for=jsonpath='{.status.sync.status}'=Synced --timeout=300s
-  kubectl --context "$C1_CTX" -n argocd wait "application/${app}" \
-    --for=jsonpath='{.status.health.status}'=Healthy --timeout=300s
-  ok "$app synced"
-done
+info "Waiting for Helm sync (Synced; Healthy on auto-promote cluster)"
+kubectl --context "$C1_CTX" -n argocd wait application/zerotrust-eks-sim \
+  --for=jsonpath='{.status.sync.status}'=Synced --timeout=300s
+kubectl --context "$C1_CTX" -n argocd wait application/zerotrust-eks-sim \
+  --for=jsonpath='{.status.health.status}'=Healthy --timeout=300s
+ok "zerotrust-eks-sim synced (dev-like auto-promote)"
+
+kubectl --context "$C1_CTX" -n argocd wait application/zerotrust-aks-sim \
+  --for=jsonpath='{.status.sync.status}'=Synced --timeout=300s
+ok "zerotrust-aks-sim synced (staging-like; may pause before Promote)"
 
 HUB_IP="$(node_ip "${C1_NAME}-control-plane")"
 ARGO_PW="$(kubectl --context "$C1_CTX" -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' 2>/dev/null | base64 -d || true)"
@@ -122,6 +149,7 @@ fi
 bold "GitOps is live"
 echo "  Source of truth:  $GITOPS_REPO_URL  (path charts/zerotrust-apps)"
 echo "  CI  Jenkins:      ${JENKINS_URL}   admin / admin123"
+echo "  SAST SonarQube:   http://${HUB_IP}:30090  (lab: authentication off)"
 echo "  CD  Argo CD:      http://${HUB_IP}:30080   admin / ${ARGO_PW:-<kubectl -n argocd get secret argocd-initial-admin-secret>}"
 echo "  Apps:             Argo CD ApplicationSet zerotrust-apps -> ${C1_NAME} + ${C2_NAME}"
 echo

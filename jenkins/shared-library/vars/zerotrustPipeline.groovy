@@ -1,8 +1,8 @@
 /**
  * Scripted CI. After the image is in the registry, a human Approve step
- * commits backend.image.tag to Git. Argo CD deploys from that commit.
+ * commits backend.image.tag + digest to Git. Argo CD + Argo Rollouts deploy.
  *
- * GitOps tag-bump commits use subject prefix chore(gitops): so poll-SCM does not rebuild.
+ * GitOps bump commits use subject prefix chore(gitops): so poll-SCM does not rebuild.
  */
 def call(Map args = [:]) {
   def chartPath = args.chartPath ?: 'charts/zerotrust-apps'
@@ -14,9 +14,11 @@ def call(Map args = [:]) {
   def dockerContext = args.dockerContext ?: 'app/backend'
   def gitCreds = args.gitCredentialsId ?: 'github-push'
   def repoUrl = args.repoUrl ?: 'https://github.com/hanumanthvendra/k8s-multicluster-zerotrust.git'
+  def sonarHost = args.sonarHostUrl ?: 'http://sonarqube.sonarqube.svc.cluster.local:9000'
   def label = "zt-ci-${UUID.randomUUID().toString().take(8)}"
 
   def gitSha = 'dev'
+  def imageDigest = ''
   def skipCi = false
 
   def podYaml = """
@@ -44,6 +46,12 @@ spec:
     - name: kaniko
       image: gcr.io/kaniko-project/executor:v1.23.2-debug
       command: ["sleep", "infinity"]
+    - name: trivy
+      image: aquasec/trivy:0.56.2
+      command: ["sleep", "infinity"]
+    - name: sonar
+      image: sonarsource/sonar-scanner-cli:11.2
+      command: ["sleep", "infinity"]
 """
 
   podTemplate(label: label, yaml: podYaml) {
@@ -68,9 +76,19 @@ spec:
                   new org.zerotrust.SecurityScans(this).gitleaks()
                 }
               },
-              SAST: {
+              Semgrep: {
                 container('semgrep') {
                   new org.zerotrust.SecurityScans(this).semgrep()
+                }
+              },
+              SonarQube: {
+                container('sonar') {
+                  new org.zerotrust.SecurityScans(this).sonarQube(sonarHost)
+                }
+              },
+              TrivyFS: {
+                container('trivy') {
+                  new org.zerotrust.SecurityScans(this).trivyFs()
                 }
               }
             )
@@ -92,15 +110,20 @@ spec:
           }
 
           stage('Image') {
+            def imageRef = "${registry}/${imageName}:${gitSha}"
             container('kaniko') {
-              new org.zerotrust.ImageBuild(this).kanikoPush(
+              imageDigest = new org.zerotrust.ImageBuild(this).kanikoPush(
                 registry: registry,
                 image: imageName,
                 tag: gitSha,
                 dockerfile: dockerfile,
                 context: dockerContext
               )
-              echo "Pushed ${registry}/${imageName}:${gitSha}"
+            }
+            stage('Trivy image') {
+              container('trivy') {
+                new org.zerotrust.SecurityScans(this).trivyImage(imageRef)
+              }
             }
           }
         }
@@ -112,10 +135,9 @@ spec:
     return
   }
 
-  // Agent pod is gone. Wait for a human so we do not hold Kaniko/Semgrep nodes.
   stage('Approve GitOps') {
     timeout(time: 24, unit: 'HOURS') {
-      input message: "Deploy ${registry}/${imageName}:${gitSha} via Argo CD? This will commit the tag to GitHub main.", ok: 'Approve'
+      input message: "Commit ${registry}/${imageName}:${gitSha} (${imageDigest}) to Git for Argo CD / Rollouts?", ok: 'Approve'
     }
   }
 
@@ -123,7 +145,7 @@ spec:
     timestamps {
       stage('Update image tag in Git') {
         checkout scm
-        new org.zerotrust.GitOps(this).bumpBackendTagAndPush(gitSha, repoUrl, gitCreds)
+        new org.zerotrust.GitOps(this).bumpBackendTagAndPush(gitSha, imageDigest, repoUrl, gitCreds)
         gitOpsGate(clusters: clusters)
       }
     }

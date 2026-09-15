@@ -1,7 +1,5 @@
 {{- if .Values.policy.enabled }}
 # Identity-based authorization — no IP or CIDR.
-# Cilium auto-scopes a bare fromEndpoints selector to the LOCAL cluster, so the
-# source cluster must be named explicitly (frontend runs in eks-sim).
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
@@ -17,6 +15,22 @@ spec:
         - matchLabels:
             app: frontend
             io.cilium.k8s.policy.cluster: {{ .Values.policy.frontendCluster | quote }}
+      toPorts:
+        - ports:
+            - port: {{ .Values.backend.listenPort | quote }}
+              protocol: TCP
+    # Preview smoke AnalysisRun Jobs (same namespace).
+    - fromEndpoints:
+        - matchLabels:
+            app: backend-smoke
+      toPorts:
+        - ports:
+            - port: {{ .Values.backend.listenPort | quote }}
+              protocol: TCP
+    # Web analysis runs from the Rollouts controller.
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: argo-rollouts
       toPorts:
         - ports:
             - port: {{ .Values.backend.listenPort | quote }}

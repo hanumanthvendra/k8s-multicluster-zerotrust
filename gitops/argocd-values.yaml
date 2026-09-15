@@ -9,6 +9,12 @@ configs:
     server.insecure: true
   cm:
     timeout.reconciliation: 30s
+    # Rollouts patches Service selectors with rollouts-pod-template-hash.
+    # Ignore only that field — not the whole Service/Rollout spec.
+    resource.customizations.ignoreDifferences.Service: |
+      jqPathExpressions:
+        - .spec.selector["rollouts-pod-template-hash"]
+
 
 server:
   extraArgs:

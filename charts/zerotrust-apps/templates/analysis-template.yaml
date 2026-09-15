@@ -1,0 +1,55 @@
+{{- if and .Values.backend.enabled .Values.blueGreen.analysis.enabled }}
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: backend-preview-smoke
+  labels:
+    {{- include "zerotrust.labels" . | nindent 4 }}
+spec:
+  # Lab: Job + HTTP GET against the Preview Service (no Prometheus/Datadog in kind).
+  # Production: add prometheus/datadog providers — see gitops/BLUE-GREEN.md
+  metrics:
+    - name: preview-http-health
+      interval: 10s
+      count: 3
+      timeout: 30
+      failureLimit: 1
+      successCondition: result == 'ok' || result contains 'BACKEND'
+      provider:
+        web:
+          url: "http://{{ include "zerotrust.previewService" . }}.{{ .Release.Namespace }}.svc.cluster.local/health"
+          timeoutSeconds: 10
+    - name: preview-smoke-job
+      interval: 15s
+      count: 1
+      timeout: 60
+      failureLimit: 1
+      provider:
+        job:
+          metadata:
+            labels:
+              app: backend-smoke
+          spec:
+            backoffLimit: 0
+            template:
+              metadata:
+                labels:
+                  app: backend-smoke
+              spec:
+                restartPolicy: Never
+                containers:
+                  - name: smoke
+                    image: {{ .Values.blueGreen.analysis.smokeImage | quote }}
+                    command:
+                      - python
+                      - -c
+                      - |
+                        import json, urllib.request
+                        base = "http://{{ include "zerotrust.previewService" . }}.{{ .Release.Namespace }}.svc.cluster.local"
+                        raw = urllib.request.urlopen(base + "/health", timeout=10).read().decode()
+                        try:
+                            body = json.loads(raw)
+                            assert body.get("status") == "ok", body
+                        except json.JSONDecodeError:
+                            urllib.request.urlopen(base + "/", timeout=10)
+{{- end }}

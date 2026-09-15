@@ -1,3 +1,6 @@
+# Staging-like: Green is created and smoke-tested, then paused for promotion.
+# Promote: kubectl argo rollouts promote backend -n apps --context kind-aks-sim
+# Do not promote from Jenkins (no kubectl apply / helm upgrade).
 clusterName: aks-sim
 
 frontend:
@@ -5,3 +8,11 @@ frontend:
 
 badClient:
   enabled: false
+
+blueGreen:
+  autoPromotionEnabled: false
+  previewReplicaCount: 1
+  scaleDownDelaySeconds: 60
+  abortScaleDownDelaySeconds: 60
+  analysis:
+    enabled: true

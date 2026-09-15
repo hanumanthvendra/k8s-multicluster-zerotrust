@@ -1,5 +1,5 @@
 // Scripted CI. Shared library `zerotrust` (jenkins/shared-library).
-// After merge to main: this job runs. Argo CD deploys Helm — Jenkins does not.
+// After merge to main: this job runs. Argo CD + Argo Rollouts deploy — Jenkins does not.
 @Library('zerotrust') _
 
 zerotrustPipeline(
@@ -8,5 +8,6 @@ zerotrustPipeline(
   registry: '172.18.0.20:5000',
   imageName: 'zerotrust-backend',
   dockerfile: 'app/backend/Dockerfile',
-  dockerContext: 'app/backend'
+  dockerContext: 'app/backend',
+  sonarHostUrl: 'http://sonarqube.sonarqube.svc.cluster.local:9000'
 )

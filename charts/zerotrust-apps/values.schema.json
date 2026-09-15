@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "title": "zerotrust-apps values",
+  "type": "object",
+  "additionalProperties": true,
+  "properties": {
+    "clusterName": { "type": "string" },
+    "backend": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "replicaCount": { "type": "integer", "minimum": 1 },
+        "image": {
+          "type": "object",
+          "properties": {
+            "registry": { "type": "string" },
+            "repository": { "type": "string" },
+            "tag": { "type": "string" },
+            "digest": { "type": "string" },
+            "pullPolicy": { "type": "string" }
+          }
+        },
+        "services": {
+          "type": "object",
+          "properties": {
+            "active": { "type": "string" },
+            "preview": { "type": "string" }
+          }
+        }
+      }
+    },
+    "blueGreen": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "autoPromotionEnabled": { "type": "boolean" },
+        "autoPromotionSeconds": { "type": ["integer", "null"] },
+        "previewReplicaCount": { "type": "integer", "minimum": 1 },
+        "scaleDownDelaySeconds": { "type": "integer", "minimum": 0 },
+        "abortScaleDownDelaySeconds": { "type": "integer", "minimum": 0 },
+        "analysis": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "smokeImage": { "type": "string" }
+          }
+        }
+      }
+    }
+  }
+}

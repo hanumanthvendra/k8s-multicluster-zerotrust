@@ -30,6 +30,10 @@ spec:
       destination:
         server: "{{url}}"
         namespace: apps
+      ignoreDifferences:
+        - kind: Service
+          jqPathExpressions:
+            - .spec.selector["rollouts-pod-template-hash"]
       syncPolicy:
         automated:
           prune: true
@@ -37,3 +41,4 @@ spec:
         syncOptions:
           - CreateNamespace=true
           - ServerSideApply=true
+          - RespectIgnoreDifferences=true

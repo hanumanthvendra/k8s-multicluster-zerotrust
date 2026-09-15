@@ -2,13 +2,13 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: backend
+  name: {{ include "zerotrust.activeService" . }}
   labels:
     app: backend
+    zerotrust.io/traffic: active
     {{- include "zerotrust.labels" . | nindent 4 }}
   annotations:
     {{- if .Values.backend.globalService }}
-    # Global across Cilium Cluster Mesh: one DNS name, endpoints in both clusters.
     service.cilium.io/global: "true"
     {{- end }}
 spec:

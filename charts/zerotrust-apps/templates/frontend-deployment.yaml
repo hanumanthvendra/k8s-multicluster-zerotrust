@@ -24,4 +24,7 @@ spec:
         - name: shell
           image: "{{ .Values.frontend.image.repository }}:{{ .Values.frontend.image.tag }}"
           command: ["sleep", "infinity"]
+          env:
+            - name: BACKEND_URL
+              value: "http://{{ include "zerotrust.activeService" . }}:{{ .Values.backend.servicePort }}"
 {{- end }}

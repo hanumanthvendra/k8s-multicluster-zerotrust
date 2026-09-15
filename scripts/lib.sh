@@ -33,3 +33,13 @@ die()  { printf "\033[1;31mx %s\033[0m\n" "$*" >&2; exit 1; }
 node_ip() { docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' "$1"; }
 
 require() { command -v "$1" >/dev/null 2>&1 || die "missing required tool: $1"; }
+
+# GitOps active Service (Argo Rollouts) vs kubectl-path Service name `backend`.
+backend_http() {
+  local ctx="${1:-$C1_CTX}"
+  if kubectl --context "$ctx" -n apps get svc zerotrust-backend-active >/dev/null 2>&1; then
+    echo "http://zerotrust-backend-active.apps.svc.cluster.local"
+  else
+    echo "http://backend.apps.svc.cluster.local"
+  fi
+}

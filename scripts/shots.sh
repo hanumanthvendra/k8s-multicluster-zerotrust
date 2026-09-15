@@ -14,13 +14,14 @@ hr(){ printf '\033[1;36m%s\033[0m\n' "──────────────
 title(){ hr; printf '\033[1m  %s\033[0m\n' "$*"; hr; }
 fe(){ kubectl --context "$C1_CTX" -n apps exec deploy/frontend -c shell -- "$@"; }
 bad(){ kubectl --context "$C1_CTX" -n apps exec deploy/bad-client -c shell -- "$@"; }
+BACKEND="$(backend_http)"
 
 case "${1:-}" in
 1)
   title "One global service across EKS + AKS  —  discovery by identity, not IP"
-  echo "frontend (in eks-sim)  ->  curl backend.apps.svc.cluster.local  x10"
+  echo "frontend (in eks-sim)  ->  curl ${BACKEND}  x10"
   echo
-  for i in $(seq 1 10); do fe curl -s --max-time 5 http://backend.apps.svc.cluster.local/; done \
+  for i in $(seq 1 10); do fe curl -s --max-time 5 "${BACKEND}/"; done \
     | sed 's/^/   /'
   echo
   echo "→ Same service name. Two clusters. Load-balanced. Zero IPs pinned."
@@ -30,10 +31,10 @@ case "${1:-}" in
   echo "Policy: app=frontend (from eks-sim) may call app=backend :8080"
   echo
   printf '   frontend   (app=frontend)   -> backend : '
-  fe curl -s --max-time 5 http://backend.apps.svc.cluster.local/ >/dev/null 2>&1 \
+  fe curl -s --max-time 5 "${BACKEND}/" >/dev/null 2>&1 \
     && echo "ALLOWED ✅" || echo "blocked"
   printf '   bad-client (app=bad-client) -> backend : '
-  bad curl -s --max-time 5 http://backend.apps.svc.cluster.local/ >/dev/null 2>&1 \
+  bad curl -s --max-time 5 "${BACKEND}/" >/dev/null 2>&1 \
     && echo "got through" || echo "DENIED / DROPPED ⛔"
   echo
   echo "→ Verdict follows IDENTITY. Reschedule the pods, IPs change, result is identical."
@@ -83,8 +84,8 @@ traffic)
   docker inspect partner >/dev/null 2>&1 || docker run -d --name partner --network "$KIND_NET" traefik/whoami >/dev/null
   P=$(node_ip partner)
   while true; do
-    fe curl -s --max-time 3 http://backend.apps.svc.cluster.local/ >/dev/null 2>&1 || true
-    bad curl -s --max-time 2 http://backend.apps.svc.cluster.local/ >/dev/null 2>&1 || true
+    fe curl -s --max-time 3 "${BACKEND}/" >/dev/null 2>&1 || true
+    bad curl -s --max-time 2 "${BACKEND}/" >/dev/null 2>&1 || true
     fe curl -s --max-time 3 "http://${P}/" >/dev/null 2>&1 || true
     sleep 1
   done

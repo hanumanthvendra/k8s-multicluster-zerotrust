@@ -3,4 +3,5 @@ title = "zerotrust"
 [[allowlists]]
 paths = [
   '''gitops/jenkins-values.yaml''',
+  '''gitops/sonarqube-values.yaml''',
 ]

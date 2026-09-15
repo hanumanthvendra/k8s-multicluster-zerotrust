@@ -1,19 +1,23 @@
 # Default chart values. Cluster overlays: values-eks-sim.yaml / values-aks-sim.yaml
+# Lab registry is kind (scripts/07-local-registry.sh). Production: ECR/GHCR/ACR + digest.
 
 clusterName: eks-sim
 
 backend:
   enabled: true
-  replicaCount: 2
+  replicaCount: 1
   image:
-    # Local kind registry (scripts/07-local-registry.sh). Prod: GHCR/ECR/ACR, not Docker Hub.
     registry: "172.18.0.20:5000"
     repository: zerotrust-backend
     tag: "9510bc5"
+    digest: ""
     pullPolicy: Always
   listenPort: 8080
   servicePort: 80
   globalService: true
+  services:
+    active: zerotrust-backend-active
+    preview: zerotrust-backend-preview
 
 frontend:
   enabled: false
@@ -21,7 +25,6 @@ frontend:
   image:
     repository: nicolaka/netshoot
     tag: latest
-  # Pin off the egress-gateway node so the stable-egress demo is meaningful.
   nodeSelector:
     kubernetes.io/hostname: eks-sim-worker
 
@@ -32,8 +35,35 @@ badClient:
     repository: nicolaka/netshoot
     tag: latest
 
-# Identity-based authorization (no IPs). frontend lives in eks-sim and is
-# allowed to reach backend in every mesh cluster.
 policy:
   enabled: true
   frontendCluster: eks-sim
+
+# Blue/green is implemented by Argo Rollouts, not Jenkins.
+# Overlays set env behaviour (dev vs staging-like). Production examples: gitops/BLUE-GREEN.md
+blueGreen:
+  enabled: true
+  autoPromotionEnabled: false
+  autoPromotionSeconds: null
+  previewReplicaCount: 1
+  scaleDownDelaySeconds: 300
+  abortScaleDownDelaySeconds: 300
+  analysis:
+    enabled: true
+    smokeImage: "172.18.0.20:5000/python:3.12-alpine"
+
+previewIngress:
+  enabled: false
+  host: backend-preview.local
+  className: ""
+  annotations: {}
+
+hpa:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 4
+  targetCPUUtilizationPercentage: 80
+
+pdb:
+  enabled: false
+  minAvailable: 1

@@ -1,0 +1,28 @@
+{{- if and .Values.backend.enabled .Values.previewIngress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "zerotrust.previewService" . }}
+  labels:
+    zerotrust.io/traffic: preview
+    {{- include "zerotrust.labels" . | nindent 4 }}
+  {{- with .Values.previewIngress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if .Values.previewIngress.className }}
+  ingressClassName: {{ .Values.previewIngress.className | quote }}
+  {{- end }}
+  rules:
+    - host: {{ .Values.previewIngress.host | quote }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "zerotrust.previewService" . }}
+                port:
+                  name: http
+{{- end }}

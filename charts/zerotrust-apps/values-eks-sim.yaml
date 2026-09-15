@@ -1,3 +1,4 @@
+# Development-like: auto-promote after preview smoke so kind can stay Healthy.
 clusterName: eks-sim
 
 frontend:
@@ -5,3 +6,11 @@ frontend:
 
 badClient:
   enabled: true
+
+blueGreen:
+  autoPromotionEnabled: true
+  previewReplicaCount: 1
+  scaleDownDelaySeconds: 30
+  abortScaleDownDelaySeconds: 30
+  analysis:
+    enabled: true

@@ -1,0 +1,17 @@
+{{- if and .Values.backend.enabled .Values.blueGreen.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "zerotrust.previewService" . }}
+  labels:
+    app: backend
+    zerotrust.io/traffic: preview
+    {{- include "zerotrust.labels" . | nindent 4 }}
+spec:
+  selector:
+    app: backend
+  ports:
+    - name: http
+      port: {{ .Values.backend.servicePort }}
+      targetPort: {{ .Values.backend.listenPort }}
+{{- end }}
