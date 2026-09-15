@@ -63,9 +63,10 @@ spec:
           gitSha = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
           def lastSubject = sh(script: 'git log -1 --pretty=%s', returnStdout: true).trim()
           echo "git=${gitSha} subject=${lastSubject}"
-          if (lastSubject.startsWith('chore(gitops):')) {
+          def manual = !currentBuild.getBuildCauses('hudson.model.Cause$UserIdCause').isEmpty()
+          if (lastSubject.startsWith('chore(gitops):') && !manual) {
             skipCi = true
-            echo 'Skipping CI — this commit is a GitOps image-tag bump.'
+            echo 'Skipping CI — poll picked up a GitOps image-pin commit. Use Build Now to run the full pipeline.'
           }
         }
 
