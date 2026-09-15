@@ -10,7 +10,7 @@ backend:
     registry: "172.18.0.20:5000"
     repository: zerotrust-backend
     tag: "6a0c7bf"
-    digest: "sha256:627372ba73a16ab58879f40cfbe2e0c667020226e24ff2514a01986e7775eaa5"
+    digest: "sha256:b0abd5196f8aa922ac39e1fe115b34646eb1a58c808568d7620efdf38c9dd174"
     pullPolicy: Always
   listenPort: 8080
   servicePort: 80
