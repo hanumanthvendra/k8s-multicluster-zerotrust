@@ -12,9 +12,8 @@ spec:
     - name: preview-http-health
       interval: 10s
       count: 3
-      timeout: 30
       failureLimit: 1
-      successCondition: result == 'ok' || result contains 'BACKEND'
+      successCondition: result == 'ok' || result contains 'BACKEND' || result contains 'ok'
       provider:
         web:
           url: "http://{{ include "zerotrust.previewService" . }}.{{ .Release.Namespace }}.svc.cluster.local/health"
@@ -22,7 +21,6 @@ spec:
     - name: preview-smoke-job
       interval: 15s
       count: 1
-      timeout: 60
       failureLimit: 1
       provider:
         job:

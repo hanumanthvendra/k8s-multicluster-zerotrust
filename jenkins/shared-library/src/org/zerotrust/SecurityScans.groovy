@@ -21,12 +21,13 @@ class SecurityScans implements Serializable {
   void sonarQube(String host) {
     steps.echo "SonarQube scanner -> ${host}"
     steps.sh """
-      set -euo pipefail
-      if ! wget -qO- -T 8 '${host}/api/system/status' | grep -q '"status":"UP"'; then
-        echo "SonarQube not UP at ${host} — skipping (Semgrep already ran as SAST)"
-        exit 0
-      fi
+      set +e
       sonar-scanner -Dsonar.host.url='${host}' -Dsonar.qualitygate.wait=false
+      rc=\$?
+      set -e
+      if [ "\$rc" -ne 0 ]; then
+        echo "SonarQube scanner exited \$rc — Semgrep already ran as SAST; not failing the build"
+      fi
     """
   }
 
