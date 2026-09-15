@@ -37,3 +37,20 @@ service:
   type: NodePort
   externalPort: 9000
   internalPort: 9000
+
+# Kind is slow; chart default timeoutSeconds: 1 kills the process mid-boot.
+startupProbe:
+  initialDelaySeconds: 60
+  periodSeconds: 10
+  failureThreshold: 36
+  timeoutSeconds: 10
+livenessProbe:
+  initialDelaySeconds: 120
+  periodSeconds: 30
+  failureThreshold: 6
+  timeoutSeconds: 10
+readinessProbe:
+  initialDelaySeconds: 60
+  periodSeconds: 10
+  failureThreshold: 12
+  timeoutSeconds: 10
