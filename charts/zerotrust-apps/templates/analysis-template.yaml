@@ -6,8 +6,11 @@ metadata:
   labels:
     {{- include "zerotrust.labels" . | nindent 4 }}
 spec:
-  # Lab: Job + HTTP GET against the Preview Service (no Prometheus/Datadog in kind).
-  # Production: add prometheus/datadog providers — see gitops/BLUE-GREEN.md
+  # Lab: HTTP GET /health on the Preview Service from the Rollouts controller.
+  # Do not use a Job here: after abort, Green is scaled to 0 and a Job hits
+  # "Host is unreachable"; Argo CD also tries to open container "smoke" on
+  # backend pods (that container does not exist). Production: Prometheus/Datadog
+  # — see gitops/BLUE-GREEN.md
   metrics:
     - name: preview-http-health
       interval: 10s
@@ -19,36 +22,4 @@ spec:
         web:
           url: "http://{{ include "zerotrust.previewService" . }}.{{ .Release.Namespace }}.svc.cluster.local/health"
           timeoutSeconds: 10
-    - name: preview-smoke-job
-      interval: 15s
-      count: 1
-      failureLimit: 1
-      provider:
-        job:
-          metadata:
-            labels:
-              app: backend-smoke
-          spec:
-            backoffLimit: 0
-            template:
-              metadata:
-                labels:
-                  app: backend-smoke
-              spec:
-                restartPolicy: Never
-                containers:
-                  - name: smoke
-                    image: {{ .Values.blueGreen.analysis.smokeImage | quote }}
-                    command:
-                      - python
-                      - -c
-                      - |
-                        import json, urllib.request
-                        base = "http://{{ include "zerotrust.previewService" . }}.{{ .Release.Namespace }}.svc.cluster.local"
-                        raw = urllib.request.urlopen(base + "/health", timeout=10).read().decode()
-                        try:
-                            body = json.loads(raw)
-                            assert body.get("status") == "ok", body
-                        except json.JSONDecodeError:
-                            urllib.request.urlopen(base + "/", timeout=10)
 {{- end }}
