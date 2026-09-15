@@ -13,7 +13,8 @@ spec:
       interval: 10s
       count: 3
       failureLimit: 1
-      successCondition: result == 'ok' || result contains 'BACKEND' || result contains 'ok'
+      # /health returns JSON {"status":"ok"}; web provider unmarshals that to a map.
+      successCondition: result.status == 'ok'
       provider:
         web:
           url: "http://{{ include "zerotrust.previewService" . }}.{{ .Release.Namespace }}.svc.cluster.local/health"
