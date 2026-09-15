@@ -84,7 +84,7 @@ Or step by step: `scripts/00…05` in order, then `06-install-gitops.sh` (`99-te
 
 ```mermaid
 flowchart LR
-  DEV["push to GitHub"] --> J["Jenkins CI<br/>tests, SAST, Kaniko, Trivy"]
+  DEV["push to GitHub"] --> J["Jenkins CI<br/>SAST, secrets, SCA, Kaniko, Trivy image"]
   J -->|"Approve: write tag+digest"| GH["charts/zerotrust-apps/values.yaml"]
   GH --> A["Argo CD ApplicationSet"]
   A --> R["Argo Rollouts blue/green"]
@@ -94,8 +94,8 @@ flowchart LR
 
 - **Git** is the source of truth (`backend.image.tag` + `digest`).
 - **Jenkins** builds and scans. After **Approve** it commits the image pin. It must not `kubectl apply`, `helm upgrade`, or patch Services.
-- **SAST:** Semgrep always runs. **SonarQube** `sonar-scanner` runs in the same Security stage with Jenkins credential `sonar-token` (`scripts/09-jenkins-sonar-cred.sh`). UI: http://127.0.0.1:9000 (`admin` / `admin`).
-- **Trivy:** filesystem scan of `app/` in Security, then **image** scan after Kaniko (CRITICAL fails the build).
+- **SAST:** Jenkins stage `SAST` — SonarQube scanner + Semgrep (credential `sonar-token`, `scripts/09-jenkins-sonar-cred.sh`). UI: port-forward SonarQube to http://127.0.0.1:9000 (`admin` / `admin`).
+- **Secrets / SCA:** Gitleaks, then Trivy filesystem on `app/`. **Trivy image** runs after Kaniko (CRITICAL fails the build). Trivy is not SAST — it scans dependencies and the built image for CVEs.
 - **Argo CD** renders `charts/zerotrust-apps` onto both clusters.
 - **Argo Rollouts** creates Green beside Blue, smokes the Preview Service, then switches `zerotrust-backend-active`. See [gitops/BLUE-GREEN.md](gitops/BLUE-GREEN.md).
 - **UIs:** Jenkins NodePort `30081` (`admin` / `admin123`), Argo CD `30080`.

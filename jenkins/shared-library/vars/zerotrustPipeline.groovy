@@ -70,24 +70,30 @@ spec:
         }
 
         if (!skipCi) {
-          stage('Security') {
+          // SAST = code analysis. Trivy is CVE/SCA, not SAST — it runs in its own stages.
+          stage('SAST') {
             parallel(
-              Secrets: {
-                container('gitleaks') {
-                  new org.zerotrust.SecurityScans(this).gitleaks()
+              SonarQube: {
+                container('sonar') {
+                  new org.zerotrust.SecurityScans(this).sonarQube(sonarHost, sonarCreds)
                 }
               },
               Semgrep: {
                 container('semgrep') {
                   new org.zerotrust.SecurityScans(this).semgrep()
                 }
-              },
-              SonarQube: {
-                container('sonar') {
-                  new org.zerotrust.SecurityScans(this).sonarQube(sonarHost, sonarCreds)
+              }
+            )
+          }
+
+          stage('Secrets and SCA') {
+            parallel(
+              Gitleaks: {
+                container('gitleaks') {
+                  new org.zerotrust.SecurityScans(this).gitleaks()
                 }
               },
-              TrivyFS: {
+              'Trivy fs': {
                 container('trivy') {
                   new org.zerotrust.SecurityScans(this).trivyFs()
                 }
