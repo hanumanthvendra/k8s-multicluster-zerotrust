@@ -1,5 +1,4 @@
-# Kind lab SonarQube (community). Production: SonarCloud / managed SonarQube + quality gate.
-# Sysctl/vm.max_map_count cannot be set inside kind — disable init containers.
+# Kind lab SonarQube Community Build. Production: SonarCloud / managed SonarQube.
 community:
   enabled: true
 
@@ -8,34 +7,33 @@ initSysctl:
 initFs:
   enabled: false
 
+elasticsearch:
+  bootstrapChecks: false
+
 persistence:
   enabled: false
 
-postgresql:
-  persistence:
-    enabled: false
-  primary:
-    resources:
-      requests:
-        cpu: 50m
-        memory: 256Mi
-      limits:
-        memory: 768Mi
-
+# Chart defaults request 2Gi / limit 6Gi — too large for kind.
 resources:
   requests:
     cpu: 200m
-    memory: 768Mi
+    memory: 1Gi
+    ephemeral-storage: 1Gi
   limits:
-    memory: 1536Mi
+    cpu: "2"
+    memory: 2Gi
+    ephemeral-storage: 8Gi
 
 env:
   - name: SONAR_ES_BOOTSTRAP_CHECKS_DISABLE
     value: "true"
 
-sonarProperties: |
-  sonar.forceAuthentication=false
+monitoringPasscode: "lab-sonar-passcode"
+
+sonarProperties:
+  sonar.forceAuthentication: "false"
 
 service:
   type: NodePort
-  nodePort: 30090
+  externalPort: 9000
+  internalPort: 9000

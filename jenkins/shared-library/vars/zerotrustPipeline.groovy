@@ -14,7 +14,7 @@ def call(Map args = [:]) {
   def dockerContext = args.dockerContext ?: 'app/backend'
   def gitCreds = args.gitCredentialsId ?: 'github-push'
   def repoUrl = args.repoUrl ?: 'https://github.com/hanumanthvendra/k8s-multicluster-zerotrust.git'
-  def sonarHost = args.sonarHostUrl ?: 'http://sonarqube.sonarqube.svc.cluster.local:9000'
+  def sonarHost = args.sonarHostUrl ?: 'http://sonarqube-sonarqube.sonarqube.svc.cluster.local:9000'
   def label = "zt-ci-${UUID.randomUUID().toString().take(8)}"
 
   def gitSha = 'dev'

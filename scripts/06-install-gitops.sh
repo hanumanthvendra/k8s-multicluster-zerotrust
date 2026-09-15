@@ -149,7 +149,7 @@ fi
 bold "GitOps is live"
 echo "  Source of truth:  $GITOPS_REPO_URL  (path charts/zerotrust-apps)"
 echo "  CI  Jenkins:      ${JENKINS_URL}   admin / admin123"
-echo "  SAST SonarQube:   http://${HUB_IP}:30090  (lab: authentication off)"
+echo "  SAST SonarQube:   http://${HUB_IP}:30090  (svc sonarqube-sonarqube; lab auth off)"
 echo "  CD  Argo CD:      http://${HUB_IP}:30080   admin / ${ARGO_PW:-<kubectl -n argocd get secret argocd-initial-admin-secret>}"
 echo "  Apps:             Argo CD ApplicationSet zerotrust-apps -> ${C1_NAME} + ${C2_NAME}"
 echo

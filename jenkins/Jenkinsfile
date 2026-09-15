@@ -9,5 +9,5 @@ zerotrustPipeline(
   imageName: 'zerotrust-backend',
   dockerfile: 'app/backend/Dockerfile',
   dockerContext: 'app/backend',
-  sonarHostUrl: 'http://sonarqube.sonarqube.svc.cluster.local:9000'
+  sonarHostUrl: 'http://sonarqube-sonarqube.sonarqube.svc.cluster.local:9000'
 )
