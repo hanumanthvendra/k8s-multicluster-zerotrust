@@ -29,6 +29,7 @@ spec:
           ports:
             - name: http
               containerPort: {{ .Values.backend.listenPort }}
+              protocol: TCP
           readinessProbe:
             tcpSocket:
               port: http
